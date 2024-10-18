@@ -53,6 +53,8 @@ export interface VncConsoleProps extends React.HTMLProps<HTMLDivElement> {
   consoleContainerId?: string;
   additionalButtons?: React.ReactNode[];
 
+  /** Callback. VNC server connected. */
+  onConnected?: (e: any) => void;
   /** Callback. VNC server disconnected. */
   onDisconnected?: (e: any) => void;
   /** Initialization of RFB failed */
@@ -93,6 +95,7 @@ export const VncConsole: React.FunctionComponent<VncConsoleProps> = ({
   additionalButtons = [] as React.ReactNode[],
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   onDisconnected = () => {},
+  onConnected,
   onInitFailed,
   onSecurityFailure,
   textConnect = 'Connect',
@@ -108,9 +111,13 @@ export const VncConsole: React.FunctionComponent<VncConsoleProps> = ({
   const novncElem = React.useRef<HTMLDivElement>(null);
   const [status, setStatus] = React.useState(CONNECTING);
 
-  const onConnected = () => {
-    setStatus(CONNECTED);
-  };
+  const _onConnected = React.useCallback(
+    (e: any) => {
+      setStatus(CONNECTED);
+      onConnected(rfb.current);
+    },
+    [onConnected]
+  );
 
   const _onDisconnected = React.useCallback(
     (e: any) => {
@@ -136,7 +143,7 @@ export const VncConsole: React.FunctionComponent<VncConsoleProps> = ({
 
   const addEventListeners = React.useCallback(() => {
     if (rfb.current) {
-      rfb.current?.addEventListener('connect', onConnected);
+      rfb.current?.addEventListener('connect', _onConnected);
       rfb.current?.addEventListener('disconnect', _onDisconnected);
       rfb.current?.addEventListener('securityfailure', _onSecurityFailure);
     }
@@ -144,7 +151,7 @@ export const VncConsole: React.FunctionComponent<VncConsoleProps> = ({
 
   const removeEventListeners = React.useCallback(() => {
     if (rfb.current) {
-      rfb.current.removeEventListener('connect', onConnected);
+      rfb.current.removeEventListener('connect', _onConnected);
       rfb.current.removeEventListener('disconnect', _onDisconnected);
       rfb.current.removeEventListener('securityfailure', _onSecurityFailure);
     }
